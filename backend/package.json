@@ -5,23 +5,24 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/server.ts"
+    "dev": "nodemon --exec \"ts-node --transpile-only\" src/server.ts"
   },
   "keywords": [],
-  "author": "GD@evWeb @lias Gaëtan Dammaretz",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
     "@types/npm": "^7.19.3",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "mongoose": "^8.18.0",
-    "nodemon": "^3.1.0"
+    "mongoose": "^8.18.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^24.3.1",
-    "ts-node": "^10.9.2"
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.2"
   }
 }
