@@ -9,6 +9,15 @@ export interface IDVD extends Document {
   director?: string;
 }
 
+export interface InputDVD {
+  eanCode: string;
+  title: string;
+  comments: string;
+  imageUrl?: string;
+  releaseYear?: number;
+  director?: string;
+}
+
 const dvdSchema: Schema = new Schema({
   eanCode: { type: String, required: true, unique: true },
   title: { type: String, required: true, unique: true },
@@ -21,3 +30,5 @@ const dvdSchema: Schema = new Schema({
 const DVD = mongoose.model<IDVD>("DVD", dvdSchema);
 
 export default DVD;
+
+// TODO enforces validation on schemas regex etc...
