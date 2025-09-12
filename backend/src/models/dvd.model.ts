@@ -6,6 +6,7 @@ export interface IDVD extends Document {
   comments: string;
   imageUrl?: string;
   releaseYear?: number;
+  brand?: string;
   director?: string;
 }
 
@@ -15,6 +16,7 @@ export interface InputDVD {
   comments: string;
   imageUrl?: string;
   releaseYear?: number;
+  brand?: string;
   director?: string;
 }
 
@@ -24,6 +26,7 @@ const dvdSchema: Schema = new Schema({
   comments: { type: String, required: false },
   imageUrl: { type: String, required: false },
   releaseYear: { type: String, required: false },
+  brand: { type: String, required: false },
   director: { type: String, required: false },
 });
 

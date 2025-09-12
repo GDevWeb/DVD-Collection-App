@@ -1,7 +1,7 @@
-import axios from "axios";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
-import DVD, { IDVD, InputDVD } from "../models/dvd.model";
+import DVD, { IDVD } from "../models/dvd.model";
+import axios = require("axios");
 
 dotenv.config();
 
@@ -11,6 +11,26 @@ const UPC_API_URL = process.env.UPC_API_URL;
 const TMDB_API_URL = process.env.TMDB_API_URL;
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
+// A utility function to clean up the product title
+const cleanTitleForSearch = (title: string): string => {
+  // 1. Convert to lowercase
+  let cleanString = title.toLowerCase();
+
+  // 2. Remove common DVD/Blu-ray keywords and other non-title info
+  cleanString = cleanString.replace(
+    /dvd|blu-ray|\bset\b|edition|(\d{4})|-disc|blister pack|no.\s\d+/gi,
+    ""
+  );
+
+  // 3. Remove punctuation and extra spaces
+  cleanString = cleanString.replace(/[",:]/g, ""); // Remove specific characters like quotes and colons
+
+  // 4. Trim and replace multiple spaces with a single space
+  cleanString = cleanString.trim().replace(/\s+/g, " ");
+
+  return cleanString;
+};
+// POST /api/dvds/manual: The frontend sends a request with all the manually entered data. The backend saves this data directly to the database. This maps to the fallback for User Story 3.
 router.post("/", async (req: Request, res: Response) => {
   try {
     const newDVDData: IDVD = req.body;
@@ -114,9 +134,11 @@ router.delete("/:id", async (req: Request, res: Response) => {
 });
 
 // ***Scan***
+//     POST /api/dvds/scan: The backend's only job is to receive the EAN code, perform the initial API lookups (UPCitemdb and TMDb), and return a list of potential matches to the frontend. It should not save anything to the database at this stage. This directly maps to User Story 1.
+// ***Scan and Search***
 /**
  * @route POST /api/dvds/scan
- * @description Scans a DVD by EAN code, retrieves product information from external APIs, and saves it to the database.
+ * @description Scans a DVD by EAN code, retrieves potential matches from external APIs, and returns a list of results.
  * @param {Request} req - The request object containing the EAN code in the body.
  * @param {Response} res - The response object.
  * @returns {Promise<void>}
@@ -127,58 +149,35 @@ router.post("/scan", async (req: Request, res: Response) => {
     const { eanCode } = req.body;
 
     if (!eanCode) {
-      return res.status(400).json({ message: "EAN code is required." });
+      return res.status(400).json({ message: "EAN code is required!" });
     }
-
+    // Checking if already exists in DB
     const existingDVD = await DVD.findOne({ eanCode });
     if (existingDVD) {
-      return res
+      res
         .status(409)
         .json({ message: "A DVD with this EAN code already exists." });
     }
 
-    const upcResponse = await axios.get(`${UPC_API_URL}?upc=${eanCode}`);
+    // Fetch 1st api
+    const upcResponse: any = await axios.get(`${UPC_API_URL}?upc=${eanCode}`);
     const upcData: any = upcResponse.data;
-    console.log(upcData);
 
+    // Check the returned data
     if (!upcData.items || upcData.items.length === 0) {
       return res
         .status(404)
         .json({ message: "Product not found on UPCitemdb." });
     }
 
-    const product = upcData.items[0];
-    const productTitle = product.title || product.product_name || null;
+    const products = upcData;
 
-    if (!productTitle) {
-      return res
-        .status(404)
-        .json({ message: "Product title not found for this EAN code." });
-    }
-
-    // Build the data object with fallback values from UPCitemdb
-    const newDVDData: InputDVD = {
-      eanCode: eanCode,
-      title: productTitle,
-      imageUrl:
-        product.images && product.images.length > 0
-          ? product.images[0]
-          : "https://placehold.co/300x400?text=Cover+Not+Found",
-      releaseYear: product.asin
-        ? parseInt(product.asin.substring(0, 4))
-        : undefined,
-      director: undefined,
-      comments: "",
-    };
-
-    const newDVD = new DVD(newDVDData);
-    const savedDVD = await newDVD.save();
-
-    res.status(201).json(savedDVD);
-  } catch (error: any) {
-    console.error("API Error:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res.status(200).json({ products });
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: (error as Error).message,
+    });
   }
 });
-
 export default router;
