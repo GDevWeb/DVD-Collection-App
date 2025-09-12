@@ -1,7 +1,8 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
-import DVD, { IDVD } from "../models/dvd.model";
+import DVD, { DVDInputData, IDVD } from "../models/dvd.model";
+import { cleanTitleForSearch } from "../utils/cleanTitle.utils";
 
 dotenv.config();
 
@@ -11,25 +12,6 @@ const UPC_API_URL = process.env.UPC_API_URL;
 const TMDB_API_URL = process.env.TMDB_API_URL;
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
-// A utility function to clean up the product title
-const cleanTitleForSearch = (title: string): string => {
-  // 1. Convert to lowercase
-  let cleanString = title.toLowerCase();
-
-  // 2. Remove common DVD/Blu-ray keywords and other non-title info
-  cleanString = cleanString.replace(
-    /dvd|blu-ray|\bset\b|edition|(\d{4})|-disc|blister pack|by|movie|no\.\s\d+/gi,
-    ""
-  );
-
-  // 3. Remove punctuation and extra spaces
-  cleanString = cleanString.replace(/[",:]/g, ""); // Remove specific characters like quotes and colons
-
-  // 4. Trim and replace multiple spaces with a single space
-  cleanString = cleanString.trim().replace(/\s+/g, " ");
-
-  return cleanString;
-};
 // POST /api/dvds/manual: The frontend sends a request with all the manually entered data. The backend saves this data directly to the database. This maps to the fallback for User Story 3.
 router.post("/", async (req: Request, res: Response) => {
   try {
@@ -133,18 +115,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   }
 });
 
-// ***Scan***
-//     POST /api/dvds/scan: The backend's only job is to receive the EAN code, perform the initial API lookups (UPCitemdb and TMDb), and return a list of potential matches to the frontend. It should not save anything to the database at this stage. This directly maps to User Story 1.
-// ***Scan and Search***
-/**
- * @route POST /api/dvds/scan
- * @description Scans a DVD by EAN code, retrieves potential matches from external APIs, and returns a list of results.
- * @param {Request} req - The request object containing the EAN code in the body.
- * @param {Response} res - The response object.
- * @returns {Promise<void>}
- */
-
-// ***Scan and Search***
+// ***1.Scan and Search***
 /**
  * @route POST /api/dvds/scan
  * @description Scans a DVD by EAN code, retrieves potential matches from external APIs, and returns a list of results.
@@ -214,15 +185,133 @@ router.post("/scan", async (req: Request, res: Response) => {
     // Send the list of potential matches back to the frontend
     res.status(200).json(results);
   } catch (error: any) {
-    if (AxiosError(error)) {
+    if (isAxiosError(error)) {
       console.error("Axios API Error:", error.response?.data || error.message);
       res
         .status(error.response?.status || 500)
         .json({ message: "External API Error", details: error.message });
-    } else {
+    } else if (error instanceof Error) {
       console.error("Internal Server Error:", error.message);
       res.status(500).json({ message: "Internal Server Error" });
+    } else {
+      console.error("Unknown error:", error);
+      res.status(500).json({ message: "Unknown Internal Server Error" });
     }
+  }
+});
+
+// 2.***Add DVD (from TMDb)***
+/**
+ * @route POST /api/dvds/add
+ * @description Adds a DVD to the collection using data fetched from TMDb based on a provided TMDb ID and EAN code.
+ * @param {Request} req - The request object containing `tmdbId` and `eanCode` in the body.
+ * @param {Response} res - The response object.
+ * @returns {Promise<void>}
+ */
+
+router.post("/add", async (req: Request, res: Response) => {
+  try {
+    const { tmdbId, eanCode } = req.body;
+
+    if (!tmdbId || !eanCode) {
+      return res
+        .status(400)
+        .json({ message: "TMDb ID and EAN code are required." });
+    }
+
+    // Check if a DVD with EAN is already in DB
+    const existing = await DVD.findOne({ eanCode }); //❗refactor in utils
+    if (existing) {
+      return res
+        .status(409)
+        .json({ message: "A DVD with this EAN code already exists." });
+    }
+
+    // Fetch the detailed movie data from TMdb
+    const movieResponse = await axios.get(
+      `${TMDB_API_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}`
+    );
+    const movieData: any = movieResponse.data;
+    console.log("movieData:", movieData);
+
+    // Fetch director's name
+    const creditResponse = await axios.get(
+      `${TMDB_API_URL}/movie/${tmdbId}/credits?api_key=${TMDB_API_KEY}`
+    );
+    const creditData: any = creditResponse.data;
+    console.log(creditData);
+    const director = creditData.crew.find(
+      (member: any) => member.job === "Director"
+    );
+    console.log("Director:", director.name);
+    const directorName = director.name;
+
+    const newDVDData: DVDInputData = {
+      eanCode: String(eanCode),
+      title: movieData.title,
+      comments: "",
+      imageUrl: movieData.poster_path
+        ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+        : "https://placehold.co/300x400?text=Cover+Not+Found",
+      releaseYear: movieData.release_date
+        ? parseInt(movieData.release_date.substring(0, 4))
+        : undefined,
+      director: directorName,
+      brand: movieData.production_companies
+        ? movieData.production_companies[0]?.name
+        : "N/A",
+    };
+
+    const newDVD = new DVD(newDVDData);
+    const savedDVD = await newDVD.save();
+
+    res.status(200).json(savedDVD);
+  } catch (error: any) {
+    if (isAxiosError(error)) {
+      console.error("Axios API Error:", error.response?.data || error.message);
+      res
+        .status(error.response?.status || 500)
+        .json({ message: "External API Error", details: error.message });
+    } else if (error instanceof Error) {
+      console.error("Internal Server Error:", error.message);
+      res.status(500).json({ message: "Internal Server Error" });
+    } else {
+      console.error("Unknown error:", error);
+      res.status(500).json({ message: "Unknown Internal Server Error" });
+    }
+  }
+});
+
+// 3.***Add DVD (Manual)***
+/**
+ * @route POST /api/dvds/manual
+ * @description Adds a DVD to the collection with manually entered data.
+ * @param {Request} req - The request object containing DVD data in the body.
+ * @param {Response} res - The response object.
+ * @returns {Promise<void>}
+ */
+
+router.post("/manual", async (req: Request, res: Response) => {
+  try {
+    const { eanCode, title, comments, imageUrl, releaseYear, director, brand } =
+      req.body;
+
+    const newDVDData: DVDInputData = {
+      eanCode: eanCode,
+      title: title,
+      comments: comments || "",
+      imageUrl: imageUrl || "https://placehold.co/300x400?text=Manual+Entry",
+      releaseYear: releaseYear || null,
+      director: director || null,
+    };
+
+    const newDVD = new DVD(newDVDData);
+    const savedDVD = await newDVD.save();
+
+    res.status(201).json(savedDVD);
+  } catch (error: any) {
+    console.error("API error:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 export default router;
