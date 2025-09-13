@@ -6,6 +6,7 @@ export interface IDVD extends Document {
   comments: string;
   imageUrl?: string;
   releaseYear?: number;
+  brand?: string;
   director?: string;
 }
 
@@ -13,8 +14,13 @@ const dvdSchema: Schema = new Schema({
   eanCode: { type: String, required: true, unique: true },
   title: { type: String, required: true, unique: true },
   comments: { type: String, required: false },
-  imageUrl: { type: String, required: false },
-  releaseYear: { type: String, required: false },
+  imageUrl: {
+    type: String,
+    required: false,
+    default: "https://placehold.co/300x400?text=Cover+Not+Found",
+  },
+  releaseYear: { type: Number, required: false },
+  brand: { type: String, required: false },
   director: { type: String, required: false },
 });
 

@@ -16,4 +16,4 @@ Technology Stack
 - **Database:** MongoDB
 - **External API:** EAN-Search.org
 
-This detailed overview demonstrates a clear project plan, understanding of the chosen technologies, and a concrete vision for the application.
+---
