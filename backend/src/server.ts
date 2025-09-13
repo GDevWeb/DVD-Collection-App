@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
-import mongoose from "mongoose";
-
+import dvdRoutes from "./routes/dvd.routes";
+import { database } from "./utils/database";
 dotenv.config();
 
 const app = express();
@@ -22,19 +22,17 @@ try {
 // Middlewares
 app.use(express.json());
 
-// MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI as string)
-  .then(() => {
-    console.log("Connected to MongoDB!");
-  })
-  .catch((err) => console.error("Could not connect to MongoDB...", err));
+// Connect to MongoDB
+database;
+
+// Routes
+app.use("/api/dvds", dvdRoutes);
 
 // Basics routes
 app.get("/", (req, res) => {
-  res.send("DVD collection App Backend is running!");
+  res.send("<h1>DVD collection App Backend is running!</h1>");
 });
 
 app.listen(port, () => {
-  console.log(`Server is listening on "http://localhost/${PORT}"`);
+  console.log(`Server is listening on "http://localhost:${PORT}"`);
 });
