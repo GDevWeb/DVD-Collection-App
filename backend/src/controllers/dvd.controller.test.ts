@@ -1,6 +1,7 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { Request, Response } from "express";
 import DVD from "../models/dvd.model";
+import * as dvdService from "../services/dvd.service";
 import { cleanTitleForSearch } from "../utils/cleanTitle.utils";
 import {
   addDVDFromTMDB,
@@ -14,14 +15,59 @@ import {
   updateDVD,
 } from "./dvd.controller";
 
-// Mock dependencies
+// Mock dependencies avec configuration complète pour axios
 jest.mock("../models/dvd.model");
-jest.mock("axios");
+jest.mock("../services/dvd.service");
 jest.mock("../utils/cleanTitle.utils");
 
+// Mock axios avec une approche différente
+jest.mock("axios", () => {
+  const originalAxios = jest.requireActual("axios");
+  return {
+    ...originalAxios,
+    default: {
+      ...originalAxios.default,
+      isAxiosError: jest.fn(),
+    },
+    isAxiosError: jest.fn(),
+    AxiosError: class MockAxiosError extends Error {
+      public isAxiosError = true;
+      public code?: string;
+      public config?: any;
+      public request?: any;
+      public response?: any;
+
+      constructor(
+        message: string,
+        code?: string,
+        config?: any,
+        request?: any,
+        response?: any
+      ) {
+        super(message);
+        this.name = "AxiosError";
+        this.code = code;
+        this.config = config;
+        this.request = request;
+        this.response = response;
+      }
+    },
+  };
+});
+
 const mockedDVD = DVD as jest.Mocked<typeof DVD>;
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockedCleanTitleForSearch = cleanTitleForSearch as jest.Mock;
+const mockedDvdService = dvdService as jest.Mocked<typeof dvdService>;
+const mockedCleanTitleForSearch = cleanTitleForSearch as jest.MockedFunction<
+  typeof cleanTitleForSearch
+>;
+
+// Cast axios.isAxiosError directement
+const mockedAxiosIsAxiosError = axios.isAxiosError as jest.MockedFunction<
+  typeof axios.isAxiosError
+>;
+
+// Classe AxiosError pour les tests
+const { AxiosError } = axios as any;
 
 describe("DVD Controller", () => {
   let req: Partial<Request>;
@@ -37,7 +83,10 @@ describe("DVD Controller", () => {
     res = {
       status: resStatus,
     };
-    req = {};
+    req = {
+      body: {},
+      params: {},
+    };
   });
 
   describe("createDVD", () => {
@@ -50,6 +99,8 @@ describe("DVD Controller", () => {
 
       await createDVD(req as Request, res as Response);
 
+      expect(mockedDVD).toHaveBeenCalledWith(newDVDData);
+      expect(mockedDVD.prototype.save).toHaveBeenCalled();
       expect(resStatus).toHaveBeenCalledWith(201);
       expect(resJson).toHaveBeenCalledWith(savedDVD);
     });
@@ -176,6 +227,16 @@ describe("DVD Controller", () => {
         message: "DVD deleted successfully",
       });
     });
+
+    it("should return 404 if DVD to delete is not found", async () => {
+      req.params = { id: "1" };
+      (mockedDVD.findById as jest.Mock).mockResolvedValue(null);
+
+      await deleteDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(404);
+      expect(resJson).toHaveBeenCalledWith({ message: "DVD not found" });
+    });
   });
 
   describe("scanDVD", () => {
@@ -203,25 +264,18 @@ describe("DVD Controller", () => {
     it("should successfully scan and return movie results", async () => {
       req.body = { eanCode: "123" };
       (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
-
-      mockedAxios.get
-        .mockResolvedValueOnce({
-          data: { items: [{ title: "Test Movie Title" }] },
-        })
-        .mockResolvedValueOnce({
-          data: {
-            results: [
-              {
-                id: 1,
-                title: "Test Movie",
-                release_date: "2023-01-01",
-                poster_path: "/poster.jpg",
-              },
-            ],
-          },
-        });
-
-      mockedCleanTitleForSearch.mockReturnValue("Test Movie Title");
+      mockedDvdService.fetchProductDetailsFromUPC.mockResolvedValue({
+        items: [{ title: "Original Movie Title" }],
+      });
+      mockedCleanTitleForSearch.mockReturnValue("clean movie title");
+      mockedDvdService.searchMovieOnTMDB.mockResolvedValue([
+        {
+          id: 1,
+          title: "Test Movie",
+          release_date: "2023-01-01",
+          poster_path: "/poster.jpg",
+        },
+      ]);
 
       await scanDVD(req as Request, res as Response);
 
@@ -236,19 +290,29 @@ describe("DVD Controller", () => {
       ]);
     });
 
-    it("should handle Axios errors", async () => {
+    it("should handle Axios errors from services", async () => {
       req.body = { eanCode: "123" };
       (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
-      const error = new Error("Network Error") as AxiosError;
-      error.isAxiosError = true;
-      error.response = {
-        status: 503,
-        data: "Service Unavailable",
-        statusText: "Service Unavailable",
-        headers: {},
-        config: {} as any,
-      };
-      mockedAxios.get.mockRejectedValue(error);
+
+      // Créer une AxiosError avec la classe mockée
+      const axiosError = new AxiosError(
+        "Network Error",
+        "NETWORK_ERROR",
+        {} as any, // config
+        null, // request
+        {
+          status: 503,
+          data: "Service Unavailable",
+          statusText: "Service Unavailable",
+          headers: {},
+          config: {} as any,
+        }
+      );
+
+      // Mock isAxiosError pour retourner true
+      mockedAxiosIsAxiosError.mockReturnValue(true);
+
+      mockedDvdService.fetchProductDetailsFromUPC.mockRejectedValue(axiosError);
 
       await scanDVD(req as Request, res as Response);
 
@@ -256,6 +320,93 @@ describe("DVD Controller", () => {
       expect(resJson).toHaveBeenCalledWith({
         message: "External API Error",
         details: "Network Error",
+      });
+
+      // Vérifier que isAxiosError a été appelé
+      expect(mockedAxiosIsAxiosError).toHaveBeenCalledWith(axiosError);
+    });
+
+    it("should handle non-Axios errors", async () => {
+      req.body = { eanCode: "123" };
+      (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
+
+      const regularError = new Error("Regular error");
+
+      // Mock isAxiosError pour retourner false
+      mockedAxiosIsAxiosError.mockReturnValue(false);
+
+      mockedDvdService.fetchProductDetailsFromUPC.mockRejectedValue(
+        regularError
+      );
+
+      await scanDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(500);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "Internal Server Error",
+      });
+    });
+
+    it("should return 404 if product not found on UPC", async () => {
+      req.body = { eanCode: "123" };
+      (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
+      mockedDvdService.fetchProductDetailsFromUPC.mockResolvedValue({
+        items: [],
+      });
+
+      await scanDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(404);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "Product not found on UPCitemdb.",
+      });
+    });
+
+    it("should return 404 if product title not found", async () => {
+      req.body = { eanCode: "123" };
+      (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
+      mockedDvdService.fetchProductDetailsFromUPC.mockResolvedValue({
+        items: [{}], // Pas de title
+      });
+
+      await scanDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(404);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "Product title not found.",
+      });
+    });
+
+    it("should return 404 if cleaned title is too short", async () => {
+      req.body = { eanCode: "123" };
+      (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
+      mockedDvdService.fetchProductDetailsFromUPC.mockResolvedValue({
+        items: [{ title: "Short" }],
+      });
+      mockedCleanTitleForSearch.mockReturnValue("ab"); // Trop court
+
+      await scanDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(404);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "Cleaned title is too short to search on TMDb.",
+      });
+    });
+
+    it("should return 404 if no movies found on TMDB", async () => {
+      req.body = { eanCode: "123" };
+      (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
+      mockedDvdService.fetchProductDetailsFromUPC.mockResolvedValue({
+        items: [{ title: "Movie Title" }],
+      });
+      mockedCleanTitleForSearch.mockReturnValue("clean title");
+      mockedDvdService.searchMovieOnTMDB.mockResolvedValue([]);
+
+      await scanDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(404);
+      expect(resJson).toHaveBeenCalledWith({
+        message: 'Movie not found on TMDb for title: "clean title"',
       });
     });
   });
@@ -265,24 +416,18 @@ describe("DVD Controller", () => {
       req.body = { tmdbId: 1, eanCode: "123" };
       (mockedDVD.findOne as jest.Mock).mockResolvedValue(null);
 
-      mockedAxios.get
-        .mockResolvedValueOnce({
-          // Movie details
-          data: {
-            title: "Test Movie",
-            poster_path: "/poster.jpg",
-            release_date: "2023-01-01",
-            production_companies: [{ name: "Test Studios" }],
-          },
-        })
-        .mockResolvedValueOnce({
-          // Credits
-          data: {
-            crew: [{ job: "Director", name: "Test Director" }],
-          },
-        });
+      const movieData = { title: "Test Movie" };
+      const creditData = { crew: [] };
+      const directorName = "Test Director";
+      const formattedData = { title: "Formatted Movie" };
+      const savedDVD = { _id: "someId", ...formattedData };
 
-      const savedDVD = { _id: "someId" };
+      mockedDvdService.fetchMovieDetailsFromTMDB.mockResolvedValue(movieData);
+      mockedDvdService.fetchMovieCreditsFromTMDB.mockResolvedValue(creditData);
+      mockedDvdService.extractDirectorName.mockReturnValue(directorName);
+      mockedDvdService.formatTMDBMovieData.mockReturnValue(
+        formattedData as any
+      );
       mockedDVD.prototype.save = jest.fn().mockResolvedValue(savedDVD);
 
       await addDVDFromTMDB(req as Request, res as Response);
@@ -290,6 +435,27 @@ describe("DVD Controller", () => {
       expect(resStatus).toHaveBeenCalledWith(200);
       expect(resJson).toHaveBeenCalledWith(savedDVD);
       expect(mockedDVD.prototype.save).toHaveBeenCalled();
+    });
+
+    it("should return 400 if tmdbId or eanCode is missing", async () => {
+      req.body = { tmdbId: 1 }; // Missing eanCode
+      await addDVDFromTMDB(req as Request, res as Response);
+      expect(resStatus).toHaveBeenCalledWith(400);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "TMDb ID and EAN code are required.",
+      });
+    });
+
+    it("should return 409 if DVD with EAN code already exists", async () => {
+      req.body = { tmdbId: 1, eanCode: "123" };
+      (mockedDVD.findOne as jest.Mock).mockResolvedValue({ eanCode: "123" });
+
+      await addDVDFromTMDB(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(409);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "A DVD with this EAN code already exists.",
+      });
     });
   });
 
@@ -310,6 +476,44 @@ describe("DVD Controller", () => {
       expect(resStatus).toHaveBeenCalledWith(201);
       expect(resJson).toHaveBeenCalledWith(savedDVD);
     });
+
+    it("should return 409 if DVD with EAN code already exists for manual add", async () => {
+      const manualData = {
+        eanCode: "manual123",
+        title: "Manual Movie",
+        releaseYear: 2020,
+      };
+      req.body = manualData;
+
+      const error = { code: 11000, message: "Duplicate key" };
+      mockedDVD.prototype.save = jest.fn().mockRejectedValue(error);
+
+      await addManualDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(409);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "A DVD with this EAN code already exists",
+      });
+    });
+
+    it("should return 500 for other errors during manual add", async () => {
+      const manualData = {
+        eanCode: "manual123",
+        title: "Manual Movie",
+        releaseYear: 2020,
+      };
+      req.body = manualData;
+
+      const error = new Error("Something went wrong during manual save");
+      mockedDVD.prototype.save = jest.fn().mockRejectedValue(error);
+
+      await addManualDVD(req as Request, res as Response);
+
+      expect(resStatus).toHaveBeenCalledWith(500);
+      expect(resJson).toHaveBeenCalledWith({
+        message: "Internal Server Error",
+      });
+    });
   });
 
   describe("getDVDByTitle", () => {
@@ -320,7 +524,9 @@ describe("DVD Controller", () => {
 
       await getDVDByTitle(req as Request, res as Response);
 
-      expect(mockedDVD.findOne).toHaveBeenCalledWith({ title: "Finding Nemo" });
+      expect(mockedDVD.findOne).toHaveBeenCalledWith({
+        title: { $regex: /Finding Nemo/i },
+      });
       expect(resStatus).toHaveBeenCalledWith(200);
       expect(resJson).toHaveBeenCalledWith(dvd);
     });
@@ -333,6 +539,20 @@ describe("DVD Controller", () => {
 
       expect(resStatus).toHaveBeenCalledWith(404);
       expect(resJson).toHaveBeenCalledWith({ message: "DVD not found" });
+    });
+  });
+
+  it("should return 500 for other errors in getDVDByTitle", async () => {
+    req.params = { title: "Test Title" };
+    const error = new Error("Database error");
+    (mockedDVD.findOne as jest.Mock).mockRejectedValue(error);
+
+    await getDVDByTitle(req as Request, res as Response);
+
+    expect(resStatus).toHaveBeenCalledWith(500);
+    expect(resJson).toHaveBeenCalledWith({
+      message: "Internal Server Error",
+      error: "Database error",
     });
   });
 });

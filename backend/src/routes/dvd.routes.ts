@@ -7,6 +7,7 @@ import {
   deleteDVD,
   getAllDVDs,
   getDVDById,
+  getDVDByTitle,
   scanDVD,
   updateDVD,
 } from "../controllers/dvd.controller";
@@ -19,6 +20,7 @@ const router = express.Router();
 router.post("/", createDVD);
 router.get("/", getAllDVDs);
 router.get("/:id", getDVDById);
+router.get("/by-title/:title", getDVDByTitle);
 router.patch("/:id", updateDVD);
 router.delete("/:id", deleteDVD);
 

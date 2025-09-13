@@ -1,15 +1,15 @@
-import axios from "axios";
-import dotenv from "dotenv";
 import { Request, Response } from "express";
 import DVD, { IDVD } from "../models/dvd.model";
+import {
+  extractDirectorName,
+  fetchMovieCreditsFromTMDB,
+  fetchMovieDetailsFromTMDB,
+  fetchProductDetailsFromUPC,
+  formatTMDBMovieData,
+  searchMovieOnTMDB,
+} from "../services/dvd.service";
 import { DVDInputData } from "../types/dvd.type";
 import { cleanTitleForSearch } from "../utils/cleanTitle.utils";
-
-dotenv.config();
-
-const UPC_API_URL = process.env.UPC_API_URL;
-const TMDB_API_URL = process.env.TMDB_API_URL;
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 /**
  * @file DVD Controller
@@ -23,6 +23,7 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
  * @param {Response} res - The Express response object.
  * @returns {Promise<void>}
  */
+
 export const createDVD = async (req: Request, res: Response): Promise<void> => {
   try {
     const newDVDData: IDVD = req.body;
@@ -157,8 +158,7 @@ export const scanDVD = async (req: Request, res: Response) => {
         .json({ message: "A DVD with this EAN code already exists." });
     }
 
-    const upcResponse: any = await axios.get(`${UPC_API_URL}?upc=${eanCode}`);
-    const upcData: any = upcResponse.data;
+    const upcData: any = await fetchProductDetailsFromUPC(eanCode);
 
     if (!upcData.items || upcData.items.length === 0) {
       return res
@@ -182,12 +182,7 @@ export const scanDVD = async (req: Request, res: Response) => {
         .json({ message: "Cleaned title is too short to search on TMDb." });
     }
 
-    const tmdbResponse: any = await axios.get(
-      `${TMDB_API_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
-        cleanTitle
-      )}`
-    );
-    const tmdbResults = tmdbResponse.data.results;
+    const tmdbResults = await searchMovieOnTMDB(cleanTitle);
 
     if (tmdbResults.length === 0) {
       return res.status(404).json({
@@ -209,7 +204,7 @@ export const scanDVD = async (req: Request, res: Response) => {
 
     res.status(200).json(results);
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
+    if (error.response || error.request || error.config) {
       console.error("Axios API Error:", error.response?.data || error.message);
       res
         .status(error.response?.status || 500)
@@ -242,47 +237,18 @@ export const addDVDFromTMDB = async (req: Request, res: Response) => {
         .json({ message: "A DVD with this EAN code already exists." });
     }
 
-    // Fetch the detailed movie data from TMdb
-    const movieResponse = await axios.get(
-      `${TMDB_API_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}`
-    );
-    const movieData: any = movieResponse.data;
-    console.log("movieData:", movieData);
+    const movieData = await fetchMovieDetailsFromTMDB(tmdbId);
+    const creditData = await fetchMovieCreditsFromTMDB(tmdbId);
+    const directorName = extractDirectorName(creditData);
 
-    // Fetch director's name
-    const creditResponse = await axios.get(
-      `${TMDB_API_URL}/movie/${tmdbId}/credits?api_key=${TMDB_API_KEY}`
-    );
-    const creditData: any = creditResponse.data;
-    console.log(creditData);
-    const director = creditData.crew.find(
-      (member: any) => member.job === "Director"
-    );
-    console.log("Director:", director.name);
-    const directorName = director.name;
-
-    const newDVDData: DVDInputData = {
-      eanCode: String(eanCode),
-      title: movieData.title,
-      comments: "",
-      imageUrl: movieData.poster_path
-        ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
-        : "https://placehold.co/300x400?text=Cover+Not+Found",
-      releaseYear: movieData.release_date
-        ? parseInt(movieData.release_date.substring(0, 4))
-        : undefined,
-      director: directorName,
-      brand: movieData.production_companies
-        ? movieData.production_companies[0]?.name
-        : "N/A",
-    };
-
+    const newDVDData = formatTMDBMovieData(movieData, directorName, eanCode);
     const newDVD = new DVD(newDVDData);
     const savedDVD = await newDVD.save();
 
     res.status(200).json(savedDVD);
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
+    // Vérification basée sur les propriétés spécifiques d'Axios
+    if (error.response || error.request || error.config) {
       console.error("Axios API Error:", error.response?.data || error.message);
       res
         .status(error.response?.status || 500)
@@ -342,7 +308,9 @@ export const getDVDByTitle = async (
 ): Promise<void> => {
   try {
     const title = req.params.title;
-    const dvd = await DVD.findOne({ title: title });
+    const dvd = await DVD.findOne({
+      title: { $regex: new RegExp(title, "i") },
+    });
 
     if (!dvd) {
       res.status(404).json({ message: "DVD not found" });
