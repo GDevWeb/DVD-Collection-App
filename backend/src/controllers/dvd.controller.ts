@@ -1,7 +1,8 @@
-import axios, { isAxiosError } from "axios";
+import axios from "axios";
 import dotenv from "dotenv";
 import { Request, Response } from "express";
-import DVD, { DVDInputData, IDVD } from "../models/dvd.model";
+import DVD, { IDVD } from "../models/dvd.model";
+import { DVDInputData } from "../types/dvd.type";
 import { cleanTitleForSearch } from "../utils/cleanTitle.utils";
 
 dotenv.config();
@@ -10,8 +11,19 @@ const UPC_API_URL = process.env.UPC_API_URL;
 const TMDB_API_URL = process.env.TMDB_API_URL;
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
-// Controller for creating a new DVD
-export const createDVD = async (req: Request, res: Response) => {
+/**
+ * @file DVD Controller
+ * @description This file contains all the controllers for the DVD routes.
+ * @module controllers/dvd.controller
+ */
+
+/**
+ * Creates a new DVD.
+ * @param {Request} req - The Express request object.
+ * @param {Response} res - The Express response object.
+ * @returns {Promise<void>}
+ */
+export const createDVD = async (req: Request, res: Response): Promise<void> => {
   try {
     const newDVDData: IDVD = req.body;
     const newDVD = new DVD(newDVDData);
@@ -30,8 +42,16 @@ export const createDVD = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for getting all DVDs
-export const getAllDVDs = async (req: Request, res: Response) => {
+/**
+ * Retrieves all DVDs from the database.
+ * @param {Request} req - The Express request object.
+ * @param {Response} res - The Express response object.
+ * @returns {Promise<void>}
+ */
+export const getAllDVDs = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const dvds = await DVD.find({}).sort({ title: 1 });
     res.status(200).json(dvds);
@@ -42,14 +62,24 @@ export const getAllDVDs = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for getting a single DVD by ID
-export const getDVDById = async (req: Request, res: Response) => {
+/**
+ * Retrieves a single DVD by its ID from the database.
+ * @param {Request} req - The Express request object, containing the DVD ID in `req.params.id`.
+ * @param {Response} res - The Express response object.
+ * @returns {Promise<void>}
+ */
+
+export const getDVDById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const id = req.params.id;
     const dvd = await DVD.findById(id);
 
     if (!dvd) {
-      return res.status(404).json({ message: "DVD not found" });
+      res.status(404).json({ message: "DVD not found" });
+      return;
     }
 
     res.status(200).json(dvd);
@@ -60,14 +90,21 @@ export const getDVDById = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for updating a DVD by ID
-export const updateDVD = async (req: Request, res: Response) => {
+/**
+ * Updates an existing DVD by its ID.
+ * @param {Request} req - The Express request object, containing the DVD ID in `req.params.id` and updated DVD data in `req.body`.
+ * @param {Response} res - The Express response object.
+ * @returns {Promise<void>}
+ */
+
+export const updateDVD = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id;
     const dvd = await DVD.findById(id);
 
     if (!dvd) {
-      return res.status(404).json({ message: "DVD not found" });
+      res.status(404).json({ message: "DVD not found" });
+      return;
     }
     const updatedDVD = req.body;
 
@@ -80,14 +117,21 @@ export const updateDVD = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for deleting a DVD by ID
-export const deleteDVD = async (req: Request, res: Response) => {
+/**
+ * Deletes an existing DVD by its ID.
+ * @param {Request} req - The Express request object, containing the DVD ID in `req.params.id` and updated DVD data in `req.body`.
+ * @param {Response} res - The Express response object.
+ * @returns {Promise<void>}
+ */
+
+export const deleteDVD = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id;
     const dvd = await DVD.findById(id);
 
     if (!dvd) {
-      return res.status(404).json({ message: "DVD not found" });
+      res.status(404).json({ message: "DVD not found" });
+      return;
     }
     await DVD.findByIdAndDelete(id);
     res.status(200).json({ message: "DVD deleted successfully" });
@@ -98,7 +142,6 @@ export const deleteDVD = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for scanning a DVD by EAN code and searching on TMDb
 export const scanDVD = async (req: Request, res: Response) => {
   try {
     const { eanCode } = req.body;
@@ -166,7 +209,7 @@ export const scanDVD = async (req: Request, res: Response) => {
 
     res.status(200).json(results);
   } catch (error: any) {
-    if (isAxiosError(error)) {
+    if (axios.isAxiosError(error)) {
       console.error("Axios API Error:", error.response?.data || error.message);
       res
         .status(error.response?.status || 500)
@@ -181,7 +224,6 @@ export const scanDVD = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for adding a DVD from TMDb data
 export const addDVDFromTMDB = async (req: Request, res: Response) => {
   try {
     const { tmdbId, eanCode } = req.body;
@@ -240,7 +282,7 @@ export const addDVDFromTMDB = async (req: Request, res: Response) => {
 
     res.status(200).json(savedDVD);
   } catch (error: any) {
-    if (isAxiosError(error)) {
+    if (axios.isAxiosError(error)) {
       console.error("Axios API Error:", error.response?.data || error.message);
       res
         .status(error.response?.status || 500)
@@ -256,6 +298,13 @@ export const addDVDFromTMDB = async (req: Request, res: Response) => {
 };
 
 // Controller for manually adding a DVD
+/**
+ * Adds a DVD manually to the database.
+ * @param {Request} req - The Express request object, containing DVD data in `req.body`.
+ * @param {Response} res - The Express response object.
+ * @returns {Promise<void>}
+ */
+
 export const addManualDVD = async (req: Request, res: Response) => {
   try {
     const { eanCode, title, comments, imageUrl, releaseYear, director, brand } =
@@ -280,14 +329,24 @@ export const addManualDVD = async (req: Request, res: Response) => {
   }
 };
 
-// Controller for getting a single DVD by title
-export const getDVDByTitle = async (req: Request, res: Response) => {
+/**
+ * Retrieves a single DVD by its title from the database.
+ * @param {Request} req - The Express request object, containing the DVD title in `req.params.title`.
+ * @param {Response} res - The Express response object.
+ * @returns {Promise<void>}
+ */
+
+export const getDVDByTitle = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const title = req.params.title;
     const dvd = await DVD.findOne({ title: title });
 
     if (!dvd) {
-      return res.status(404).json({ message: "DVD not found" });
+      res.status(404).json({ message: "DVD not found" });
+      return;
     }
 
     res.status(200).json(dvd);
