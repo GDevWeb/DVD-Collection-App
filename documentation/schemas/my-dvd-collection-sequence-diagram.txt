@@ -1,0 +1,44 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant YourBackend
+    participant UPCitemdb
+    participant TMDb
+
+    %% User Story 1: Scan & Search
+    User->>Frontend: Scans EAN code
+    Frontend->>YourBackend: POST /api/dvds/scan (eanCode)
+    YourBackend->>UPCitemdb: GET /prod/trial/lookup (eanCode)
+    UPCitemdb-->>YourBackend: Product data (title)
+    YourBackend->>YourBackend: Clean title
+    YourBackend->>TMDb: GET /search/movie (cleanTitle)
+    TMDb-->>YourBackend: List of movies
+    YourBackend-->>Frontend: 200 OK (list of matches)
+
+    %% User Story 2: Add DVD from Match
+    User->>Frontend: Selects a movie from list
+    Frontend->>YourBackend: POST /api/dvds/add (tmdbId, eanCode)
+    YourBackend->>TMDb: GET /movie/{tmdbId}
+    TMDb-->>YourBackend: Movie details
+    YourBackend->>TMDb: GET /movie/{tmdbId}/credits
+    TMDb-->>YourBackend: Credits data (director)
+    YourBackend->>YourBackend: Format and save data
+    YourBackend-->>Frontend: 201 Created (new DVD)
+    Frontend-->>User: Success message
+
+    %% User Story 3: Manual Input Fallback
+    alt If no matches found
+        User->>Frontend: Enters manual details
+        Frontend->>YourBackend: POST /api/dvds/manual (all data)
+        YourBackend->>YourBackend: Save manual data
+        YourBackend-->>Frontend: 201 Created (new DVD)
+        Frontend-->>User: Success message
+    end
+
+    %% CRUD
+    User->>Frontend: Views DVD list
+    Frontend->>YourBackend: GET /api/dvds
+    YourBackend-->>Frontend: 200 OK (all DVDs)
+    User->>Frontend: Deletes a DVD
+    Frontend->>YourBackend: DELETE /api/dvds/{id}
+    YourBackend-->>Frontend: 200 OK

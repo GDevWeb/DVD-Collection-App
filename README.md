@@ -17,3 +17,4 @@ This full-stack application allows users to build and manage a personal collecti
 - **Backend:** Node.js, Express.js & TypeScript
 - **Database:** MongoDB
 - **External APIs:** **UPCitemdb** (for EAN lookup) and **The Movie Database (TMDb)** (for comprehensive movie data).
+  cdir
