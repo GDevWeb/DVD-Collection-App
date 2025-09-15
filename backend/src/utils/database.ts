@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 dotenv.config();
 
 // MongoDB
-export const database = mongoose
+export const connectDB = mongoose
   .connect(process.env.MONGODB_URI as string)
   .then(() => {
     console.log("Connected to MongoDB!");

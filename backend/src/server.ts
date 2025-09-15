@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import dvdRoutes from "./routes/dvd.routes";
-import { database } from "./utils/database";
+import { connectDB } from "./utils/database";
 dotenv.config();
 
 const app = express();
@@ -22,9 +22,6 @@ try {
 // Middlewares
 app.use(express.json());
 
-// Connect to MongoDB
-database;
-
 // Routes
 app.use("/api/dvds", dvdRoutes);
 
@@ -33,8 +30,18 @@ app.get("/", (req, res) => {
   res.send("<h1>DVD collection App Backend is running!</h1>");
 });
 
-app.listen(port, () => {
-  console.log(`Server is listening on "http://localhost:${PORT}"`);
-});
+const startServer = async () => {
+  try {
+    await connectDB;
+    app.listen(port, () => {
+      console.log(`Server is listening on "http://localhost:${PORT}"`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;
