@@ -80,7 +80,7 @@ The project follows a phased development plan with a total estimated duration of
 
 ### More informations
 
-"For a more detailed look into the project's planning, a full breakdown of the user stories, and technical specifications, please see the project's documentation folder: Project Documentation"
+"For a more detailed look into the project's planning, a full breakdown of the user stories, and technical specifications, please see the project's documentation folder: [Project Documentation](https://docs.google.com/document/d/10zKXndq1wtxycy4joiCV-QbeKhAbweyKACKm5GN5HqI/edit?tab=t.y4fft1ntncqb#heading=h.iu58cumrm13o)"
 
 ---
 
@@ -182,7 +182,7 @@ Le projet suit un plan de développement en plusieurs phases, avec une durée to
 
 ### Plus d'informations
 
-"Pour une analyse plus détaillée de la planification du projet, une présentation complète des user stories et des spécifications techniques, veuillez consulter le dossier de documentation du projet : Documentation du projet"
+"Pour une analyse plus détaillée de la planification du projet, une présentation complète des user stories et des spécifications techniques, veuillez consulter le dossier de documentation du projet :[Documentation du projet](https://docs.google.com/document/d/10zKXndq1wtxycy4joiCV-QbeKhAbweyKACKm5GN5HqI/edit?tab=t.y4fft1ntncqb#heading=h.iu58cumrm13o)"
 
 ---
 
