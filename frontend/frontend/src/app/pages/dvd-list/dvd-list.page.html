@@ -1,0 +1,31 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>My DVD Collection</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/pages/scanner">
+        <ion-icon slot="icon-only" name="scan-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list *ngIf="!isLoading && dvds.length > 0">
+    <ion-item *ngFor="let dvd of dvds">
+      <ion-thumbnail slot="start">
+        <img [src]="dvd.imageUrl" alt="DVD Cover" />
+      </ion-thumbnail>
+      <ion-label>
+        <h2>{{ dvd.title }}</h2>
+        <p *ngIf="dvd.director">Directed by {{ dvd.director }}</p>
+        <p *ngIf="dvd.releaseYear">Released in {{ dvd.releaseYear }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <div *ngIf="!isLoading && dvds.length === 0" class="ion-text-center">
+    <p>Your collection is empty. Scan a DVD to get started!</p>
+  </div>
+
+  <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+</ion-content>
