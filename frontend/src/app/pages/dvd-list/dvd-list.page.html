@@ -1,5 +1,6 @@
 <ion-header>
   <ion-toolbar>
+    <!-- add logo -->
     <ion-title>My DVD Collection</ion-title>
     <ion-buttons slot="end">
       <ion-button routerLink="/pages/scanner">
@@ -10,22 +11,36 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-list *ngIf="!isLoading && dvds.length > 0">
-    <ion-item *ngFor="let dvd of dvds">
+  @if (isLoading) {
+  <div class="loading-container ion-text-center">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading your DVD collection...</p>
+  </div>
+  } @else { @for (dvd of dvds; track dvd._id || dvd.title) {
+  <ion-list>
+    <ion-item>
       <ion-thumbnail slot="start">
         <img [src]="dvd.imageUrl" alt="DVD Cover" />
       </ion-thumbnail>
       <ion-label>
         <h2>{{ dvd.title }}</h2>
-        <p *ngIf="dvd.director">Directed by {{ dvd.director }}</p>
-        <p *ngIf="dvd.releaseYear">Released in {{ dvd.releaseYear }}</p>
+        @if (dvd.director) {
+        <p>Directed by {{ dvd.director }}</p>
+        } @if (dvd.releaseYear) {
+        <p>Released in {{ dvd.releaseYear }}</p>
+        }
       </ion-label>
     </ion-item>
   </ion-list>
-
-  <div *ngIf="!isLoading && dvds.length === 0" class="ion-text-center">
-    <p>Your collection is empty. Scan a DVD to get started!</p>
+  } @empty {
+  <div class="empty-state ion-text-center">
+    <ion-icon name="film-outline" size="large" color="medium"></ion-icon>
+    <h3>Your collection is empty</h3>
+    <p>Scan a DVD to get started!</p>
+    <ion-button routerLink="/pages/scanner" expand="block" fill="outline">
+      <ion-icon slot="start" name="scan-outline"></ion-icon>
+      Start Scanning
+    </ion-button>
   </div>
-
-  <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+  } }
 </ion-content>

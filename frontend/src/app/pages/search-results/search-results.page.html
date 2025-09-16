@@ -1,13 +1,41 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>search-results</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button (click)="onBack()"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Search Results</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">search-results</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  @if (results.length > 0) { @for (result of results; track $index) {
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>{{ result.title }}</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="result-details">
+        <ion-thumbnail>
+          <img [src]="result.imageUrl" alt="Movie Poster" />
+        </ion-thumbnail>
+        <div>
+          <p>**Release Year:** {{ result.releaseYear }}</p>
+        </div>
+      </div>
+      <ion-button expand="block" [disabled]="isAdding" (click)="addDVD(result)">
+        Add to Collection
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+  } } @else {
+  <div class="ion-text-center">
+    <p>No results found. Please go back to the scanner.</p>
+  </div>
+  }
+  <ion-alert
+    [isOpen]="showAlert"
+    [header]="alertMessage"
+    [buttons]="alertButtons"
+    (didDismiss)="onAlertDismiss()"
+  ></ion-alert>
 </ion-content>

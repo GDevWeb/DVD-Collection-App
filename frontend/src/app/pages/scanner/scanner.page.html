@@ -1,20 +1,24 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>Scanner</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/pages/dvd-list"></ion-back-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
   <div class="scanner-container">
-    <div *ngIf="!isScanning && !showScanResult" class="scanner-instructions">
+    @if (!isScanning && !showScanResult) {
+    <div class="scanner-instructions">
       <h2>Scan a Barcode</h2>
       <p>Point your camera at a barcode to scan it</p>
       <ion-button (click)="startScan()" expand="block">
         Start Scanner
       </ion-button>
     </div>
-
-    <div *ngIf="isScanning" class="scanner-overlay">
+    } @if (isScanning) {
+    <div class="scanner-overlay">
       <div class="scanner-frame">
         <div class="scanner-line"></div>
       </div>
@@ -27,11 +31,12 @@
         Cancel
       </ion-button>
     </div>
-
-    <div *ngIf="showScanResult" class="scan-result">
+    } @if (showScanResult) {
+    <div class="scan-result">
       <h3>Scan Result:</h3>
       <p>{{ scanResult }}</p>
       <ion-button (click)="startScan()" fill="outline"> Scan Again </ion-button>
     </div>
+    }
   </div>
 </ion-content>
