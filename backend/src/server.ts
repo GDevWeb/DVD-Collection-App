@@ -1,3 +1,4 @@
+import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import dvdRoutes from "./routes/dvd.routes";
@@ -21,6 +22,7 @@ try {
 
 // Middlewares
 app.use(express.json());
+app.use(cors());
 
 // Routes
 app.use("/api/dvds", dvdRoutes);
