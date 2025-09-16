@@ -23,15 +23,18 @@ export class DvdListPage implements OnInit {
 
   loadDVDs() {
     this.isLoading = true;
-    this.dvdService.getAllDVDs().subscribe(
-      (data) => {
+    this.dvdService.getAllDVDs().subscribe({
+      next: (data) => {
         this.dvds = data;
         this.isLoading = false;
       },
-      (error) => {
+      error: (error) => {
         console.error('Error fetching DVDs:', error);
         this.isLoading = false;
-      }
-    );
+      },
+      complete: () => {
+        console.log('DVD loading completed');
+      },
+    });
   }
 }

@@ -13,14 +13,18 @@ export class DvdService {
   constructor(private http: HttpClient) {}
 
   getAllDVDs(): Observable<DVD[]> {
-    const dvds = this.http.get<any[]>(`${this.backendURL}/api/dvds`);
-    console.log(dvds);
-
     return this.http.get<any[]>(`${this.backendURL}/api/dvds`);
   }
 
   scanDvD(eanCode: string): Observable<any[]> {
     return this.http.post<any[]>(`${this.backendURL}/api/dvds/scan`, {
+      eanCode,
+    });
+  }
+
+  addDVDFromTMDB(tmdbId: number, eanCode: string): Observable<any> {
+    return this.http.post<any>(`${this.backendURL}/api/dvds/add`, {
+      tmdbId,
       eanCode,
     });
   }

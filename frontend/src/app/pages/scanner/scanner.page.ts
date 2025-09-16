@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
+import { IonicModule } from '@ionic/angular';
 import {
+  IonBackButton,
   IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
   IonIcon,
@@ -28,6 +31,10 @@ import { DvdService } from 'src/app/services/dvd.service';
     IonIcon,
     CommonModule,
     FormsModule,
+    IonButtons,
+    IonBackButton,
+    RouterLink,
+    IonicModule,
   ],
 })
 export class ScannerPage implements OnInit {
