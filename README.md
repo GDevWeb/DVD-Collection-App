@@ -1,6 +1,6 @@
 # DVD Collection App Backend
 
-## English version
+## **English Version**
 
 A full-stack application designed to help users digitize and manage their personal DVD collection by scanning barcodes.
 
@@ -24,18 +24,18 @@ The backend is structured to follow the **Model-View-Controller (MVC)** pattern 
 ```
 /backend
 ├── src/
-│   ├── controllers/         # Manages request/response flow (thin layer)
-│   ├── models/              # Mongoose schemas (the data models)
-│   ├── routes/              # Express routing definitions
-│   ├── services/            # All business logic and external API calls
-│   ├── utils/               # Utility functions (e.g., database connection)
-│   ├── server.ts            # The main entry point for the server
-│   └── __tests__/           # Jest test suite for the API
-├── .env.test                # Environment variables for testing
-├── .env                     # Environment variables for development
-├── jest.config.ts           # Jest test configuration
-├── tsconfig.json            # TypeScript compiler configuration
-└── package.json             # Project dependencies and scripts
+│   ├── controllers/         # Manages request/response flow (thin layer)
+│   ├── models/              # Mongoose schemas (the data models)
+│   ├── routes/              # Express routing definitions
+│   ├── services/            # All business logic and external API calls
+│   ├── utils/               # Utility functions (e.g., database connection)
+│   ├── server.ts            # The main entry point for the server
+│   └── __tests__/           # Jest test suite for the API
+├── .env.test                # Environment variables for testing
+├── .env                     # Environment variables for development
+├── jest.config.ts           # Jest test configuration
+├── tsconfig.json            # TypeScript compiler configuration
+└── package.json             # Project dependencies and scripts
 ```
 
 ---
@@ -80,7 +80,7 @@ The project follows a phased development plan with a total estimated duration of
 
 ### More informations
 
-"For a more detailed look into the project's planning, a full breakdown of the user stories, and technical specifications, please see the project's documentation folder: [Project Documentation](https://docs.google.com/document/d/10zKXndq1wtxycy4joiCV-QbeKhAbweyKACKm5GN5HqI/edit?tab=t.y4fft1ntncqb#heading=h.iu58cumrm13o)"
+For a more detailed look into the project's planning, a full breakdown of the user stories, and technical specifications, please see the project's documentation folder: [Project Documentation](https://docs.google.com/document/d/10zKXndq1wtxycy4joiCV-QbeKhAbweyKACKm5GN5HqI/edit?tab=t.y4fft1ntncqb#heading=h.iu58cumrm13o)
 
 ---
 
@@ -126,18 +126,18 @@ Le backend est structuré selon le modèle **Model-View-Controller (MVC)** avec 
 ```
 /backend
 ├── src/
-│   ├── controllers/         # Gère le flux requête/réponse (couche fine)
-│   ├── models/              # Schémas Mongoose (les modèles de données)
-│   ├── routes/              # Définitions de routage Express
-│   ├── services/            # Toute la logique métier et les appels aux API externes
-│   ├── utils/               # Fonctions utilitaires (par exemple, connexion à la base de données)
-│   ├── server.ts            # Le point d'entrée principal du serveur
-│   └── __tests__/           # Suite de tests Jest pour l'API
-├── .env.test                # Variables d'environnement pour les tests
-├── .env                     # Variables d'environnement pour le développement
-├── jest.config.ts           # Configuration des tests Jest
-├── tsconfig.json            # Configuration du compilateur TypeScript
-└── package.json             # Dépendances et scripts du projet
+│   ├── controllers/         # Gère le flux requête/réponse (couche fine)
+│   ├── models/              # Schémas Mongoose (les modèles de données)
+│   ├── routes/              # Définitions de routage Express
+│   ├── services/            # Toute la logique métier et les appels aux API externes
+│   ├── utils/               # Fonctions utilitaires (par exemple, connexion à la base de données)
+│   ├── server.ts            # Le point d'entrée principal du serveur
+│   └── __tests__/           # Suite de tests Jest pour l'API
+├── .env.test                # Variables d'environnement pour les tests
+├── .env                     # Variables d'environnement pour le développement
+├── jest.config.ts           # Configuration des tests Jest
+├── tsconfig.json            # Configuration du compilateur TypeScript
+└── package.json             # Dépendances et scripts du projet
 ```
 
 ---
@@ -182,7 +182,7 @@ Le projet suit un plan de développement en plusieurs phases, avec une durée to
 
 ### Plus d'informations
 
-"Pour une analyse plus détaillée de la planification du projet, une présentation complète des user stories et des spécifications techniques, veuillez consulter le dossier de documentation du projet :[Documentation du projet](https://docs.google.com/document/d/10zKXndq1wtxycy4joiCV-QbeKhAbweyKACKm5GN5HqI/edit?tab=t.y4fft1ntncqb#heading=h.iu58cumrm13o)"
+Pour une analyse plus détaillée de la planification du projet, une présentation complète des user stories et des spécifications techniques, veuillez consulter le dossier de documentation du projet : [Documentation du projet](https://docs.google.com/document/d/10zKXndq1wtxycy4joiCV-QbeKhAbweyKACKm5GN5HqI/edit?tab=t.y4fft1ntncqb#heading=h.iu58cumrm13o)
 
 ---
 
