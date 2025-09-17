@@ -3,15 +3,37 @@
     <ion-title>Scanner</ion-title>
     <ion-buttons slot="start">
       <ion-back-button
-        (click)="cancelScan()"
         defaultHref="/pages/dvd-list"
+        (click)="cancelScan()"
       ></ion-back-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-content-no-bg">
-  <div class="scanner-frame">
-    <div class="scanner-line"></div>
+<ion-content class="ion-padding ion-text-center">
+  <div class="scanner-container">
+    <div class="scanner-actions">
+      <h2>Scan a Barcode</h2>
+      <ion-button (click)="startScan()">Start Scan</ion-button>
+    </div>
+
+    <div class="manual-entry">
+      <h2>Manual Entry</h2>
+      <ion-item>
+        <ion-input
+          label="Enter EAN code"
+          labelPlacement="floating"
+          type="text"
+          [(ngModel)]="manualEanCode"
+        ></ion-input>
+      </ion-item>
+      <ion-button
+        expand="block"
+        [disabled]="!manualEanCode"
+        (click)="handleManualEntry()"
+      >
+        Search
+      </ion-button>
+    </div>
   </div>
 </ion-content>

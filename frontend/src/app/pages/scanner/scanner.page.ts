@@ -9,6 +9,8 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
+  IonInput,
+  IonItem,
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
@@ -30,35 +32,29 @@ import { DvdService } from 'src/app/services/dvd.service';
     FormsModule,
     IonButtons,
     IonBackButton,
+    IonInput,
+    IonItem,
   ],
 })
 export class ScannerPage implements OnInit {
   isScanning = false;
-  scanResult: string = '';
+  manualEanCode: string = '';
 
   constructor(private dvdService: DvdService, private router: Router) {}
 
-  ngOnInit() {}
-
-  ionViewWillEnter() {
-    this.startScan();
-  }
-
-  ionViewWillLeave() {
-    this.stopScan();
+  ngOnInit() {
+    console.log('Scanner Page Initialized');
   }
 
   async startScan() {
+    console.log('Attempting to start scan...');
     try {
-      this.isScanning = true;
       const { barcodes } = await BarcodeScanner.scan();
       if (barcodes.length > 0) {
-        this.scanResult = barcodes[0].displayValue;
-        this.stopScan();
-        await this.handleScanResult(this.scanResult);
+        console.log('Barcode scanned:', barcodes[0].displayValue);
+        await this.handleScanResult(barcodes[0].displayValue);
       } else {
-        // Handle case where no barcode is found
-        this.stopScan();
+        console.log('No barcode found during scan.');
         this.router.navigateByUrl('/pages/manual-entry', {
           state: {
             message: 'No barcode found. Please enter details manually.',
@@ -67,12 +63,19 @@ export class ScannerPage implements OnInit {
       }
     } catch (e) {
       console.error('Scanning error:', e);
-      this.stopScan();
+      this.router.navigateByUrl('/pages/manual-entry', {
+        state: {
+          message: 'An error occurred during scanning.',
+        },
+      });
     }
   }
 
-  async stopScan() {
-    this.isScanning = false;
+  async handleManualEntry() {
+    console.log('Attempting manual search for EAN:', this.manualEanCode);
+    if (this.manualEanCode) {
+      await this.handleScanResult(this.manualEanCode);
+    }
   }
 
   async handleScanResult(eanCode: string) {
@@ -82,6 +85,7 @@ export class ScannerPage implements OnInit {
         state: { results, eanCode },
       });
     } catch (error: any) {
+      console.error('API Scan Error:', error);
       this.router.navigateByUrl('/pages/manual-entry', {
         state: {
           eanCode,
@@ -92,7 +96,6 @@ export class ScannerPage implements OnInit {
   }
 
   async cancelScan() {
-    this.stopScan();
     this.router.navigateByUrl('/pages/dvd-list', { replaceUrl: true });
   }
 }
