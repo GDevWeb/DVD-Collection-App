@@ -37,14 +37,11 @@ import { DvdService } from 'src/app/services/dvd.service';
   ],
 })
 export class ScannerPage implements OnInit {
-  isScanning = false;
   manualEanCode: string = '';
 
   constructor(private dvdService: DvdService, private router: Router) {}
 
-  ngOnInit() {
-    console.log('Scanner Page Initialized');
-  }
+  ngOnInit() {}
 
   async startScan() {
     console.log('Attempting to start scan...');
@@ -79,6 +76,7 @@ export class ScannerPage implements OnInit {
   }
 
   async handleScanResult(eanCode: string) {
+    console.log('Handling scan result for EAN:', eanCode);
     try {
       const results = await firstValueFrom(this.dvdService.scanDvD(eanCode));
       this.router.navigateByUrl('/pages/search-results', {

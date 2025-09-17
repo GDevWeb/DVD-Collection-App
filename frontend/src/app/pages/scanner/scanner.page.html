@@ -11,29 +11,27 @@
 </ion-header>
 
 <ion-content class="ion-padding ion-text-center">
-  <div class="scanner-container">
-    <div class="scanner-actions">
-      <h2>Scan a Barcode</h2>
-      <ion-button (click)="startScan()">Start Scan</ion-button>
-    </div>
+  <div class="scanner-actions">
+    <h2>Scan a Barcode</h2>
+    <ion-button (click)="startScan()">Start Scan</ion-button>
+  </div>
 
-    <div class="manual-entry">
-      <h2>Manual Entry</h2>
-      <ion-item>
-        <ion-input
-          label="Enter EAN code"
-          labelPlacement="floating"
-          type="text"
-          [(ngModel)]="manualEanCode"
-        ></ion-input>
-      </ion-item>
-      <ion-button
-        expand="block"
-        [disabled]="!manualEanCode"
-        (click)="handleManualEntry()"
-      >
-        Search
-      </ion-button>
-    </div>
+  <div class="manual-entry">
+    <h2>Manual Entry</h2>
+    <ion-item>
+      <ion-input
+        label="Enter EAN code"
+        labelPlacement="floating"
+        type="text"
+        [(ngModel)]="manualEanCode"
+      ></ion-input>
+    </ion-item>
+    <ion-button
+      expand="block"
+      [disabled]="!manualEanCode"
+      (click)="handleManualEntry()"
+    >
+      Search
+    </ion-button>
   </div>
 </ion-content>
