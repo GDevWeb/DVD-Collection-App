@@ -17,11 +17,17 @@ export const routes: Routes = [
       import('./pages/scanner/scanner.page').then((m) => m.ScannerPage),
   },
   {
-    path: 'search-results',
-    loadComponent: () => import('./pages/search-results/search-results.page').then( m => m.SearchResultsPage)
+    path: 'pages/search-results',
+    loadComponent: () =>
+      import('./pages/search-results/search-results.page').then(
+        (m) => m.SearchResultsPage
+      ),
   },
   {
     path: 'manual-entry',
-    loadComponent: () => import('./pages/manual-entry/manual-entry.page').then( m => m.ManualEntryPage)
+    loadComponent: () =>
+      import('./pages/manual-entry/manual-entry.page').then(
+        (m) => m.ManualEntryPage
+      ),
   },
 ];

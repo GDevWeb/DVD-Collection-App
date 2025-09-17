@@ -97,11 +97,15 @@
   }
 }
 
-// Global styles for when scanner is active
-:global(body.scanner-active) {
-  background: transparent !important;
-
-  ion-app {
-    background: transparent !important;
-  }
+ion-content.ion-content-no-bg {
+  --background: transparent;
 }
+
+ion-app.scanner-active {
+  --background: transparent !important;
+}
+
+// Global styles to hide the app background and show the camera feed
+// ion-app.scanner-active {
+//   --background: transparent !important;
+// }
