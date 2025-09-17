@@ -2,41 +2,16 @@
   <ion-toolbar>
     <ion-title>Scanner</ion-title>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/pages/dvd-list"></ion-back-button>
+      <ion-back-button
+        (click)="cancelScan()"
+        defaultHref="/pages/dvd-list"
+      ></ion-back-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <div class="scanner-container">
-    @if (!isScanning && !showScanResult) {
-    <div class="scanner-instructions">
-      <h2>Scan a Barcode</h2>
-      <p>Point your camera at a barcode to scan it</p>
-      <ion-button (click)="startScan()" expand="block">
-        Start Scanner
-      </ion-button>
-    </div>
-    } @if (isScanning) {
-    <div class="scanner-overlay">
-      <div class="scanner-frame">
-        <div class="scanner-line"></div>
-      </div>
-      <ion-button
-        (click)="cancelScan()"
-        fill="clear"
-        color="light"
-        class="cancel-button"
-      >
-        Cancel
-      </ion-button>
-    </div>
-    } @if (showScanResult) {
-    <div class="scan-result">
-      <h3>Scan Result:</h3>
-      <p>{{ scanResult }}</p>
-      <ion-button (click)="startScan()" fill="outline"> Scan Again </ion-button>
-    </div>
-    }
+<ion-content class="ion-content-no-bg">
+  <div class="scanner-frame">
+    <div class="scanner-line"></div>
   </div>
 </ion-content>
